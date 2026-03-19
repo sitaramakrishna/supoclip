@@ -45,6 +45,11 @@ def _verify_qstash_signature(body: bytes, signature: str) -> bool:
     return bool(signature)  # Require header to be present
 
 
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+
+
 @app.post("/api/worker")
 async def worker(
     request: Request,

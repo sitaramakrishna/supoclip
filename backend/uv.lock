@@ -3313,6 +3313,7 @@ dependencies = [
     { name = "asyncpg" },
     { name = "fastapi" },
     { name = "greenlet" },
+    { name = "httpx" },
     { name = "mediapipe" },
     { name = "moviepy" },
     { name = "numpy" },
@@ -3351,6 +3352,7 @@ requires-dist = [
     { name = "asyncpg", specifier = ">=0.29.0" },
     { name = "fastapi", specifier = ">=0.110.0" },
     { name = "greenlet", specifier = ">=2.0.0" },
+    { name = "httpx", specifier = ">=0.27.0" },
     { name = "mediapipe", specifier = ">=0.10.0" },
     { name = "moviepy", specifier = ">=2.2.1" },
     { name = "numpy", specifier = ">=1.24.0" },
@@ -3373,7 +3375,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "httpx", specifier = ">=0.27.0" },
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "pytest-asyncio", specifier = ">=1.2.0" },
     { name = "pytest-cov", specifier = ">=7.0.0" },

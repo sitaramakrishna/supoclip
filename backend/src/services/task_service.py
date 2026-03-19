@@ -18,6 +18,7 @@ from ..repositories.source_repository import SourceRepository
 from ..repositories.clip_repository import ClipRepository
 from ..repositories.cache_repository import CacheRepository
 from .video_service import VideoService
+from .webhook_shim import fire_webhook, fire_webhook_error
 from .task_completion_email_service import (
     TaskCompletionEmailService,
     TaskCompletionRecipient,
@@ -226,6 +227,7 @@ class TaskService:
             clips_output_dir.mkdir(parents=True, exist_ok=True)
 
             clip_ids = []
+            clip_infos = []  # accumulated for webhook payload
             prev_clip_path: Optional[Path] = None
             render_start = perf_counter()
 
@@ -288,6 +290,7 @@ class TaskService:
                 )
                 await self.db.commit()
                 clip_ids.append(clip_id)
+                clip_infos.append(clip_info)
 
                 # Update task's clip IDs array
                 await self.task_repo.update_task_clips(self.db, task_id, clip_ids)
@@ -328,6 +331,13 @@ class TaskService:
                 clips_count=len(clip_ids),
             )
 
+            # Notify BookFlashReel webhook
+            await fire_webhook(
+                job_id=task_id,
+                clips=clip_infos,
+                scene_markers=result.get("segments", []),
+            )
+
             logger.info(
                 f"Task {task_id} completed successfully with {len(clip_ids)} clips"
             )
@@ -354,6 +364,7 @@ class TaskService:
             await self.task_repo.update_task_status(
                 self.db, task_id, "error", progress_message=str(e)
             )
+            await fire_webhook_error(job_id=task_id, error_message=str(e))
             error_code = "task_error"
             message = str(e).lower()
             if "download" in message or "youtube" in message:

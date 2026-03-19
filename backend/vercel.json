@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/main_refactored.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "src/qstash_worker.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxDuration": 300
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/worker",
+      "dest": "src/qstash_worker.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "src/main_refactored.py"
+    }
+  ],
+  "env": {
+    "SELF_HOST": "true",
+    "DEFAULT_PROCESSING_MODE": "fast",
+    "MAX_CLIPS": "5",
+    "OUTPUT_DIR": "/tmp/clips",
+    "TEMP_DIR": "/tmp/temp"
+  }
+}

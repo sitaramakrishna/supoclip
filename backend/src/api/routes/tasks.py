@@ -130,7 +130,14 @@ async def create_task(request: Request, db: AsyncSession = Depends(get_db)):
     add_subtitles = data.get("add_subtitles", True)
     if not isinstance(add_subtitles, bool):
         add_subtitles = True
-    if not raw_source or not raw_source.get("url"):
+    # Also accept flat source_url (BookFlashReel integration format)
+    if not raw_source:
+        flat_url = data.get("source_url")
+        if flat_url:
+            raw_source = {"url": flat_url}
+        else:
+            raise HTTPException(status_code=400, detail="Source URL is required")
+    elif not raw_source.get("url"):
         raise HTTPException(status_code=400, detail="Source URL is required")
 
     try:
@@ -157,23 +164,41 @@ async def create_task(request: Request, db: AsyncSession = Depends(get_db)):
             raw_source["url"]
         )
 
-        # Enqueue job for worker
-        queue_adapter = getattr(request.app.state, "queue_adapter", JobQueue)
-        job_id = await queue_adapter.enqueue_processing_job(
-            "process_video_task",
-            processing_mode,
-            task_id,
-            raw_source["url"],
-            source_type,
-            user_id,
-            font_family,
-            font_size,
-            font_color,
-            caption_template,
-            processing_mode,
-            output_format,
-            add_subtitles,
-        )
+        # Enqueue job — use QStash on Vercel, fall back to arq locally
+        import os as _os
+        if _os.getenv("QSTASH_TOKEN") and _os.getenv("QSTASH_WORKER_URL"):
+            from ...services.qstash_publisher import enqueue_task
+            await enqueue_task(
+                task_id=task_id,
+                url=raw_source["url"],
+                source_type=source_type,
+                user_id=user_id,
+                font_family=font_family,
+                font_size=font_size,
+                font_color=font_color,
+                caption_template=caption_template,
+                processing_mode=processing_mode,
+                output_format=output_format,
+                add_subtitles=add_subtitles,
+            )
+            job_id = task_id  # QStash has no separate job ID
+        else:
+            queue_adapter = getattr(request.app.state, "queue_adapter", JobQueue)
+            job_id = await queue_adapter.enqueue_processing_job(
+                "process_video_task",
+                processing_mode,
+                task_id,
+                raw_source["url"],
+                source_type,
+                user_id,
+                font_family,
+                font_size,
+                font_color,
+                caption_template,
+                processing_mode,
+                output_format,
+                add_subtitles,
+            )
 
         # Save source metadata for resume/retries in environments without sources.url column
         redis_client = redis.Redis(

@@ -4,9 +4,20 @@
     {
       "src": "src/main_refactored.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "src/qstash_worker.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxDuration": 300
+      }
     }
   ],
   "routes": [
+    {
+      "src": "/api/worker",
+      "dest": "src/qstash_worker.py"
+    },
     {
       "src": "/(.*)",
       "dest": "src/main_refactored.py"

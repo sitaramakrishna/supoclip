@@ -1,11 +1,13 @@
-# Use Python 3.11 slim image
-FROM python:3.11-slim
+# Use Python 3.13 slim image
+FROM python:3.13-slim
 
-# Install system dependencies including ffmpeg and unzip (for deno)
+# Install system dependencies including ffmpeg, unzip, and build tools
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     curl \
     unzip \
+    build-essential \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install deno (required by yt-dlp for YouTube JS challenge solving)
@@ -15,6 +17,7 @@ ENV PATH="/root/.deno/bin:${PATH}"
 
 # Install uv package manager
 RUN pip install uv
+ENV UV_PYTHON=/usr/local/bin/python3
 
 # Set working directory
 WORKDIR /app
@@ -40,8 +43,8 @@ COPY transitions/ ./transitions/
 # Create necessary directories for video processing
 RUN mkdir -p /app/uploads /app/clips /app/logs /tmp
 
-# Expose the port FastAPI will run on
-EXPOSE 8000
+# Expose the port (Cloud Run uses PORT env var)
+EXPOSE 8080
 
-# Activate virtual environment and start the application
-CMD [".venv/bin/uvicorn", "src.main_refactored:app", "--host", "0.0.0.0", "--port", "8000"]
+# Use a shell script to expand the PORT environment variable
+CMD .venv/bin/uvicorn src.main_refactored:app --host 0.0.0.0 --port ${PORT:-8080}

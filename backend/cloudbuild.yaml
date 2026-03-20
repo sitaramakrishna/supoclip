@@ -1,0 +1,14 @@
+steps:
+  # Build the image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/supoclip-backend:latest', '.']
+
+  # Push the images to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/supoclip-backend:latest']
+
+images:
+  - 'gcr.io/$PROJECT_ID/supoclip-backend:latest'
+
+options:
+  machineType: 'UNSPECIFIED' # Use a standard machine type for the build

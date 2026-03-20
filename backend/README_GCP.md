@@ -61,9 +61,20 @@ Note the IP address of the Redis instance.
 -   **Worker Service**: Runs the `arq` background worker. Configured with `--min-instances 1` to ensure it's always ready to process video jobs (adjust as needed).
 -   **VPC Connector**: If your database/Redis is in a private VPC, you'll need to add a VPC connector to both services.
 
-## Performance Tuning
+## Relaunching the Application
 
-Since video processing is CPU-intensive:
--   The API is configured with 2 CPU and 4Gi Memory.
--   The Worker is configured with 4 CPU and 8Gi Memory.
--   Timeout is set to 1 hour (`3600s`) to allow for long video renders.
+If you have shut down the instances to save costs, follow these steps to go live again:
+
+1.  **Restart the Database**:
+    ```bash
+    gcloud sql instances patch supoclip-db --activation-policy=ALWAYS
+    ```
+
+2.  **Recreate Infrastructure**:
+    The Redis and VPC Connector need to be recreated (refer to the Infrastructure Setup section above).
+
+3.  **Redeploy Services**:
+    Run the deployment script to rebuild and relaunch the API and Worker:
+    ```bash
+    ./bin/deploy_gcp.sh
+    ```
